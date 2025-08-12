@@ -1,5 +1,5 @@
 import { app, Notification } from 'electron';
-import { configStore, Mainwindow } from './main';
+import { configStore, mainWindow } from './main';
 
 
 export class AuthManager {
@@ -10,7 +10,7 @@ export class AuthManager {
         this.activeClient = null;
     }
 
-    updateClient(metadata: VideoMetadata, ip) {
+    updateClient(metadata: VideoMetadata, ip: string) {
         // console.log(this.clients.map(e => e.uuid == '432'));
         this.clients.forEach((client) => {
             const now = Date.now();
@@ -29,18 +29,18 @@ export class AuthManager {
                 'thumbnail': metadata?.data?.thumbnail ?? client?.clientInfo?.thumbnail ?? 'YTlogo4.png',
                 'playerState': metadata?.data?.playerState ?? client?.clientInfo?.playerState ?? 'unknown'
             };
-            if (Mainwindow) Mainwindow.webContents.send('clientUpdate', this.clients);
+            if (mainWindow) mainWindow.webContents.send('clientUpdate', this.clients);
             
         });
     }
-    updateClientState(uuid,state: PlayerState) {
+    updateClientState(uuid: string,state: PlayerState) {
         // console.log(this.clients.map(e => e.uuid == '432'));
         this.clients.forEach((client) => {
             if (client.uuid !== uuid) return;
             if (!client.clientInfo) return;
             client.clientInfo.playerState = state ?? 'unknown';
         });
-        if (Mainwindow) Mainwindow.webContents.send('clientUpdate', this.clients);
+        if (mainWindow) mainWindow.webContents.send('clientUpdate', this.clients);
     }
     
 
@@ -59,7 +59,7 @@ export class AuthManager {
         this.clients.push(client);
         this.activeClient = client;
         if (!app.isReady()) return;
-        if (Mainwindow) Mainwindow.webContents.send('clientUpdate', this.clients);
+        if (mainWindow) mainWindow.webContents.send('clientUpdate', this.clients);
         if(!configStore.get('debugNotification')) return;
         new Notification({
             'urgency': 'critical',
@@ -81,7 +81,7 @@ export class AuthManager {
         }
         this.clients.push(client);
         if (!app.isReady()) return;
-        if (Mainwindow) Mainwindow.webContents.send('clientUpdate', this.clients);
+        if (mainWindow) mainWindow.webContents.send('clientUpdate', this.clients);
         if(!configStore.get('debugNotification')) return;
         new Notification({
             'urgency': 'critical',

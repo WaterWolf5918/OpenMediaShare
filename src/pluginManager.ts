@@ -3,10 +3,12 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFile
 import { homedir } from 'os';
 import path from 'path';
 import { Notification } from 'electron';
-import { Mainwindow, store } from './main';
+import { mainWindow, store } from './main';
 import { webServer } from './restServ';
 import { Logger } from './logger';
 import { TypedEventEmitterClass } from './utils';
+import { InfoStore } from './infoStore';
+import { pathToFileURL } from 'url';
 
 type PluginEvents = {
     playbackChange: [PlayerState],
@@ -21,11 +23,16 @@ type RunningPlugin = {
     eventDispatcher: TypedEventEmitterClass<PluginEvents>
 }
 
+interface DumbObject {
+    [key:string]: any // A fix for not being able to index objects by string, because why the fuck not.
+}
+
+
 const logger = new Logger();
 export class PluginManager {
     lastSong: string;
     pluginDir: any;
-    pluginFileMappings: object;
+    pluginFileMappings: DumbObject
     plugins: FSPlugin[];
     runningPlugins: RunningPlugin[];
     constructor(){
@@ -39,9 +46,10 @@ export class PluginManager {
     async loadPlugins(){
         const files = readdirSync(this.pluginDir,{ withFileTypes: true });
         for(const file of files) {
-            if (!file.isFile() || !file.name.endsWith('js') && !file.name.endsWith('js.d')) continue;
+
+            if (!file.isFile() || !file.name.endsWith('js')){continue;}
             logger.info(['Plugin Manager'],`Importing Plugin: ${file.name}`);
-            const plugin: FSPlugin = await import(path.join(this.pluginDir,file.name)); 
+            const plugin: FSPlugin = await import(pathToFileURL(path.join(this.pluginDir,file.name)).toString()); 
 
             if (!plugin.info || !plugin.info.name) {
                 logger.warn(['Plugin Manager'],`File ${file.name} isn't a vaild plugin, Skipping. `);
@@ -62,14 +70,14 @@ export class PluginManager {
             }
             this.pluginFileMappings[plugin.info.name] = file.name;
             this.plugins.push(plugin);
-            if (file.name.endsWith('js.d')){
+            if (file.name.endsWith('d.js')){
                 logger.info(['Plugin Manager'],`Plugin "${file.name}" is disabled`);
                 continue;
             }
             await this.startPlugin(plugin.info.name);
 
         }
-        if (Mainwindow) Mainwindow.webContents.send('allPluginsLoaded',this.runningPlugins.map(p => p.plugin.info));
+        if (mainWindow) mainWindow.webContents.send('allPluginsLoaded',this.runningPlugins.map(p => p.plugin.info));
     }
 
 
@@ -79,7 +87,8 @@ export class PluginManager {
         const modules = {
             electron: electronImport,
             express: webServer,
-            Logger: Logger
+            Logger: Logger,
+            infoStore: store
         };
 
         const plugin = this.plugins.find(p => p.info.name == pluginName);
@@ -133,7 +142,7 @@ export class PluginManager {
 
 
 
-    private async stopPlugin(pluginName){
+    private async stopPlugin(pluginName: string){
         const runningPlugin = this.runningPlugins.find(rp => rp.plugin.info.name == pluginName);
         logger.info(['Plugin Manager'],`Stopping Plugin: ${runningPlugin.plugin.info.name}`);
         runningPlugin.eventDispatcher.emitter.removeAllListeners();
@@ -144,7 +153,7 @@ export class PluginManager {
 
     async stopPlugins(){
         this.runningPlugins.forEach(lp => {
-            this.stopPlugin(lp);
+            this.stopPlugin(lp.plugin.info.name);
         });
     }
 
@@ -180,7 +189,7 @@ export class PluginManager {
         this.pluginFileMappings[pluginName] = `${this.pluginFileMappings[pluginName]}.d`;
         if(this.plugins.find(p => p.info.name == pluginName).info.legacy){
             logger.error(['PluginManager'],'Legacy plugins do not support live starting or stopping.');
-            if (Mainwindow) {
+            if (mainWindow) {
                 new Notification({
                     urgency: 'critical',
                     title: '⚠️ Plugin Toggle Note',
@@ -200,7 +209,7 @@ export class PluginConfigHelper {
     filePath: string;
     vaild: boolean;
     configPath: string;
-    config: object;
+    config: DumbObject;
     constructor(plugin: {info: {name: string, configBuilder: ConfigBuilder}},filePath=path.join(homedir(),'.openMediaShare','configs')){
         this.vaild = false;
         this.name = plugin.info.name;
@@ -218,7 +227,7 @@ export class PluginConfigHelper {
     private buildPluginConfig(plugin: {info: {name: string, configBuilder: ConfigBuilder}}) {
         
         if(!existsSync(this.configPath)){
-            const json = {};
+            const json: DumbObject = {};
             const pages = plugin.info.configBuilder.pages;
             // const testPages = testPlugin.info.configBuilder.pages;
             //# condense pages into one key:value pairs 
@@ -233,12 +242,12 @@ export class PluginConfigHelper {
         //idk do ui stuff sometime
     }
 
-    set(key,value) {
+    set(key:string,value:any) {
         this.config[key] = value;
         writeFileSync(this.configPath,JSON.stringify(this.config,null,4),);
     }
 
-    get(key) {
+    get(key: string) {
         return this.config[key];
     }
 }

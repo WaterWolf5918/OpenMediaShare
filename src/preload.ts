@@ -4,14 +4,6 @@
 import { contextBridge, ipcRenderer, app} from 'electron';
 
 
-
-contextBridge.exposeInMainWorld('controls', {
-    minimize: () => ipcRenderer.invoke('winControls', 'minimize'),
-    maximize: () => ipcRenderer.invoke('winControls', 'maximize'),
-    close: ()    => ipcRenderer.invoke('winControls', 'close'),
-    size: (arg)  => ipcRenderer.invoke('size', arg),
-});
-
 contextBridge.exposeInMainWorld('settings', {
     
     getAppVersion: () => ipcRenderer.invoke('getAppVersion'),
@@ -19,34 +11,29 @@ contextBridge.exposeInMainWorld('settings', {
 
     getBuilder: ()    => ipcRenderer.invoke('getConfigBuilder'),
     getConfig: ()     => ipcRenderer.invoke('getConfig'),
-    get: (key)        => ipcRenderer.invoke('getConfigKey', key),
-    set: (key, value) => ipcRenderer.invoke('setConfigKey', key, value),
+    get: (key: string)        => ipcRenderer.invoke('getConfigKey', key),
+    set: (key:string, value:any) => ipcRenderer.invoke('setConfigKey', key, value),
 });
 
 contextBridge.exposeInMainWorld('plugins', {
-    getPluginList: ()                             => ipcRenderer.invoke('getPluginList'),
-    enable: (pluginName: string)                  => ipcRenderer.invoke('enablePlugin',pluginName),
-    disable: (pluginName: string)                 => ipcRenderer.invoke('disablePlugin',pluginName),
-    getConfig: (pluginName: string)               => ipcRenderer.invoke('getPluginConfig',pluginName),
-    get: (pluginName: string, key: string)        => ipcRenderer.invoke('getPluginKey',pluginName,key),
-    set: (pluginName: string, key: string, value) => ipcRenderer.invoke('setPluginKey',pluginName,key,value)
+    getPluginList: ()                                  => ipcRenderer.invoke('getPluginList'),
+    enable: (pluginName: string)                       => ipcRenderer.invoke('enablePlugin',pluginName),
+    disable: (pluginName: string)                      => ipcRenderer.invoke('disablePlugin',pluginName),
+    getConfig: (pluginName: string)                    => ipcRenderer.invoke('getPluginConfig',pluginName),
+    get: (pluginName: string, key: string)             => ipcRenderer.invoke('getPluginKey',pluginName,key),
+    set: (pluginName: string, key: string, value: any) => ipcRenderer.invoke('setPluginKey',pluginName,key,value)
 });
 
 contextBridge.exposeInMainWorld('callbacks', {
-    clientUpdate:(callback) => ipcRenderer.on('clientUpdate',(event,clients) => {
+    clientUpdate:(callback: (clients:Client[]) => void) => ipcRenderer.on('clientUpdate',(event,clients:Client[]) => {
         callback(clients);
     }),
 });
 
 
+const test = function() {
 
-contextBridge.exposeInMainWorld('theme', {
-    setTheme: (theme) => ipcRenderer.invoke('setTheme', theme),
-    getTheme: ()      => ipcRenderer.invoke('getTheme'),
-});
-
-
-
+}
 
 
 

@@ -1,22 +1,15 @@
 {
-    "compilerOptions": {
-        "module": "commonjs",
-        "noImplicitAny": false,
-        "sourceMap": true,
-        "outDir": "dist",
-        "baseUrl": ".",
-        "resolveJsonModule": true,
-        "esModuleInterop": true,
-        "types": ["./src/index.d.ts"],
-        "paths": {
-            "*": [
-                "node_modules/*"
-            ]
-        },
-        "target": "ES2024",
-        "lib": ["ES2024","DOM","DOM.Iterable"]
-    },
-    "include": [
-        "src/**/*"
-    ]
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "commonjs",
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "noImplicitAny": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "outDir": "dist",
+    "moduleResolution": "node",
+    "resolveJsonModule": true
+  }
 }

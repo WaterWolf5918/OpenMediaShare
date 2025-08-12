@@ -1,8 +1,7 @@
 {
-    "label": false,
+    "debugNotification": false,
     "debug": false,
     "webDisplayIPs": false,
     "webDisplayUUIDs": false,
-    "debugNotification": false,
     "webDisplayService": false
 }

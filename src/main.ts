@@ -1,3 +1,58 @@
+// import { app, BrowserWindow } from 'electron';
+// import path from 'node:path';
+// import started from 'electron-squirrel-startup';
+
+// let mainWindow
+// // Handle creating/removing shortcuts on Windows when installing/uninstalling.
+// if (started) {
+//     app.quit();
+// }
+
+// const createWindow = () => {
+//     // Create the browser window.
+//     mainWindow = new BrowserWindow({
+//         width: 800,
+//         height: 600,
+//         webPreferences: {
+//             preload: path.join(__dirname, 'preload.js'),
+//         },
+//     });
+
+//     // and load the index.html of the app.
+//     if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+//         mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
+//     } else {
+//         mainWindow.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
+//     }
+
+//     // Open the DevTools.
+//     mainWindow.webContents.openDevTools();
+// };
+
+// // Quit when all windows are closed, except on macOS. There, it's common
+// // for applications and their menu bar to stay active until the user quits
+// // explicitly with Cmd + Q.
+// app.on('window-all-closed', () => {
+//     if (process.platform !== 'darwin') {
+//         app.quit();
+//     }
+// });
+
+// app.on('activate', () => {
+//     // On OS X it's common to re-create a window in the app when the
+//     // dock icon is clicked and there are no other windows open.
+//     if (BrowserWindow.getAllWindows().length === 0) {
+//         createWindow();
+//     }
+// });
+
+// // This method will be called when Electron has finished
+// // initialization and is ready to create browser windows.
+// // Some APIs can only be used after this event occurs.
+// app.whenReady().then(() => {
+
+//     createWindow()
+// })
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 if (require('electron-squirrel-startup')) process.exit();
 import path from 'path';
@@ -61,7 +116,7 @@ const pluginManager = new PluginManager();
 const tray: Tray = null;
 const logger = new Logger();
 
-export let Mainwindow: BrowserWindow;
+export let mainWindow: BrowserWindow;
 let appShouldClose = false;
 
 
@@ -72,7 +127,7 @@ console.clear = () => {
 
 
 function createWindow() {
-    Mainwindow = new BrowserWindow({
+    mainWindow = new BrowserWindow({
         resizable: true,
         webPreferences: {
             contextIsolation: true,
@@ -86,10 +141,15 @@ function createWindow() {
         icon: path.join(__dirname, '../build', 'YTlogo4.png'),
 
     });
-    Mainwindow.loadFile(path.join(__dirname, '../app/index.html'));
-    if (!tray) { positron.createBasicTray(tray, Mainwindow); }
+    if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+        mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
+    } else {
+        mainWindow.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
+    }
+    // Mainwindow.loadFile(path.join(__dirname, '../app/index.html'));
+    if (!tray) { positron.createBasicTray(tray, mainWindow); }
 
-    Mainwindow.on('close', (e) => {
+    mainWindow.on('close', (e) => {
         if (!appShouldClose) e.preventDefault();
         dialog.showMessageBox(positron.closedialogSettings).then(async (result) => {
             if (result.response == 1) {
@@ -112,7 +172,7 @@ ipcMain.handle('getAppVersion', () => {
 });
 
 ipcMain.handle('forceRefresh', () => {
-    Mainwindow.reload();
+    mainWindow.reload();
 });
 
 ipcMain.handle('getConfigBuilder',() => {
@@ -198,7 +258,7 @@ app.whenReady().then(() => {
     createWindow();
     store.on('infoUpdated', () => {
         logger.dinfo(['InfoStore'],'Info Update');
-        Mainwindow.webContents.send('infoUpdate', store.info);
+        mainWindow.webContents.send('infoUpdate', store.info);
     });
     logger.info(['Plugin Manager'],'Starting Plugins');
     pluginManager.loadPlugins();
@@ -223,3 +283,5 @@ restSetup()
         throw new Error('Failed to create web server');
         
     });
+
+
